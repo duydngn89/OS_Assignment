@@ -1,6 +1,5 @@
+
 #include "cpu.h"
-
-
 #include "timer.h"
 #include "sched.h"
 #include "loader.h"
@@ -10,12 +9,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <semaphore.h>
 
 static int time_slot;
 static int num_cpus;
 static int done = 0;
-extern int print_time_slot;
 
 #ifdef MM_PAGING
 static int memramsz;
@@ -52,12 +49,10 @@ static void * cpu_routine(void * args) {
 	int time_left = 0;
 	struct pcb_t * proc = NULL;
 	while (1) {
-		usleep(3);
 		/* Check the status of current process */
 		if (proc == NULL) {
 			/* No process is running, the we load new process from
 		 	* ready queue */
-		 usleep(3);
 			proc = get_proc();
 			if (proc == NULL) {
                            next_slot(timer_id);
@@ -65,27 +60,22 @@ static void * cpu_routine(void * args) {
                         }
 		}else if (proc->pc == proc->code->size) {
 			/* The porcess has finish it job */
-			printf("Time slot %3lu is printing\n", current_time());
 			printf("\tCPU %d: Processed %2d has finished\n",
 				id ,proc->pid);
 			free(proc);
-			usleep(3);
 			proc = get_proc();
 			time_left = 0;
 		}else if (time_left == 0) {
 			/* The process has done its job in current time slot */
-			printf("Time slot %3lu is printing\n", current_time());
 			printf("\tCPU %d: Put process %2d to run queue\n",
 				id, proc->pid);
 			put_proc(proc);
-			usleep(20);
 			proc = get_proc();
 		}
 		
 		/* Recheck process status after loading new process */
 		if (proc == NULL && done) {
 			/* No process to run, exit */
-			printf("Time slot %3lu is printing\n", current_time());
 			printf("\tCPU %d stopped\n", id);
 			break;
 		}else if (proc == NULL) {
@@ -94,8 +84,6 @@ static void * cpu_routine(void * args) {
 			next_slot(timer_id);
 			continue;
 		}else if (time_left == 0) {
-			usleep(5);
-			printf("Time slot %3lu is printing\n", current_time());
 			printf("\tCPU %d: Dispatched process %2d\n",
 				id, proc->pid);
 			time_left = time_slot;
@@ -111,7 +99,6 @@ static void * cpu_routine(void * args) {
 }
 
 static void * ld_routine(void * args) {
-
 #ifdef MM_PAGING
 	struct memphy_struct* mram = ((struct mmpaging_ld_args *)args)->mram;
 	struct memphy_struct** mswp = ((struct mmpaging_ld_args *)args)->mswp;
@@ -120,20 +107,23 @@ static void * ld_routine(void * args) {
 #else
 	struct timer_id_t * timer_id = (struct timer_id_t*)args;
 #endif
-
 	int i = 0;
 	printf("ld_routine\n");
 	while (i < num_processes) {
-		
 		struct pcb_t * proc = load(ld_processes.path[i]);
-		
 #ifdef MLQ_SCHED
 		proc->prio = ld_processes.prio[i];
 #endif
 		while (current_time() < ld_processes.start_time[i]) {
 			next_slot(timer_id);
 		}
-		printf("Time slot %3lu is printing\n", current_time());
+#ifdef MM_PAGING
+		proc->mm = malloc(sizeof(struct mm_struct));
+		init_mm(proc->mm, proc);
+		proc->mram = mram;
+		proc->mswp = mswp;
+		proc->active_mswp = active_mswp;
+#endif
 		printf("\tLoaded a process at %s, PID: %d PRIO: %ld\n",
 			ld_processes.path[i], proc->pid, ld_processes.prio[i]);
 		add_proc(proc);
@@ -199,7 +189,6 @@ static void read_config(const char * path) {
 		fscanf(file, "%lu %s\n", &ld_processes.start_time[i], proc);
 #endif
 		strcat(ld_processes.path[i], proc);
-		printf("Start Time: %lu, Process: %s, Priority: %lu\n", ld_processes.start_time[i], proc, ld_processes.prio[i]);
 	}
 }
 
@@ -255,8 +244,6 @@ int main(int argc, char * argv[]) {
 #endif
 
 
-
-
 	/* Init scheduler */
 	init_scheduler();
 
@@ -266,7 +253,6 @@ int main(int argc, char * argv[]) {
 #else
 	pthread_create(&ld, NULL, ld_routine, (void*)ld_event);
 #endif
-
 	for (i = 0; i < num_cpus; i++) {
 		pthread_create(&cpu[i], NULL,
 			cpu_routine, (void*)&args[i]);
