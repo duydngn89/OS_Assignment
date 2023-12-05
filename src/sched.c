@@ -56,7 +56,7 @@ struct pcb_t * get_mlq_proc(void) {
 
 
 // Check if the current queue is not empty and has remaining time slots
-	usleep(10);
+	//usleep(10);
     if (mlq_ready_queue[curr_prio].timeslot > 0) {
 		
 		if(!empty(&mlq_ready_queue[curr_prio])){
@@ -135,7 +135,7 @@ void add_mlq_proc(struct pcb_t * proc) {
 }
 
 struct pcb_t * get_proc(void) {
-	usleep(1);
+	//usleep(1);
 	return get_mlq_proc();
 }
 
