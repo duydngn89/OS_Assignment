@@ -66,7 +66,7 @@ struct mm_struct {
 struct framephy_struct { 
    int fpn;
    struct framephy_struct *fp_next;
-
+   
    /* Resereed for tracking allocated framed */
    struct mm_struct* owner;
 };
@@ -76,6 +76,7 @@ struct memphy_struct {
    BYTE *storage;
    int maxsz;
    
+   sem_t memphylock;
    /* Sequential device fields */ 
    int rdmflg;
    int cursor;

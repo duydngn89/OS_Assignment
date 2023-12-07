@@ -213,7 +213,7 @@ int pg_getpage(struct mm_struct *mm, int pgn, int *fpn, struct pcb_t *caller)
     
   if (!PAGING_PAGE_PRESENT(pte))
   { /* Page is not online, make it actively living */
-    printf("Swapping\n");
+    
     int vicpgn, swpfpn; 
     int vicfpn;
     uint32_t vicpte;
@@ -232,10 +232,13 @@ int pg_getpage(struct mm_struct *mm, int pgn, int *fpn, struct pcb_t *caller)
 
     /* Do swap frame from MEMRAM to MEMSWP and vice versa*/
     /* Copy victim frame to swap */
+    printf("Swapping\n");
+    sem_wait(&caller->mram->memphylock);
     __swap_cp_page(caller->mram, vicfpn, caller->active_mswp, swpfpn);
+    
     /* Copy target frame from swap to mem */
    __swap_cp_page(caller->active_mswp, tgtfpn, caller->mram, vicfpn);
-
+    
 
     /* Update page table */
     pte_set_swap(&vicpte, 1,0);
@@ -245,6 +248,7 @@ int pg_getpage(struct mm_struct *mm, int pgn, int *fpn, struct pcb_t *caller)
     pte_set_fpn(&pte, tgtfpn);
 
     enlist_pgn_node(&caller->mm->fifo_pgn,pgn);
+    sem_post(&caller->mram->memphylock);
   }
 
   *fpn = PAGING_FPN(pte);
@@ -261,7 +265,9 @@ int pg_getpage(struct mm_struct *mm, int pgn, int *fpn, struct pcb_t *caller)
 int pg_getval(struct mm_struct *mm, int addr, BYTE *data, struct pcb_t *caller)
 {
   int pgn = PAGING_PGN(addr);
+  
   int off = PAGING_OFFST(addr);
+  
   int fpn;
 
   /* Get the page to MEMRAM, swap from MEMSWAP if needed */
@@ -292,9 +298,10 @@ int pg_setval(struct mm_struct *mm, int addr, BYTE value, struct pcb_t *caller)
     return -1; /* invalid page access */
   
   int phyaddr = (fpn << PAGING_ADDR_FPN_LOBIT) + off;
-
+  sem_wait(&caller->mram->memphylock);
   MEMPHY_write(caller->mram,phyaddr, value);
-
+  //printf("Value %d\n", caller);
+  sem_post(&caller->mram->memphylock);
    return 0;
 }
 
@@ -485,9 +492,11 @@ int inc_vma_limit(struct pcb_t *caller, int vmaid, int inc_sz)
   /* The obtained vm area (only) 
    * now will be alloc real ram region */
   cur_vma->vm_end += inc_sz;
+  sem_wait(&caller->mram->memphylock);
   if (vm_map_ram(caller, area->rg_start, area->rg_end, 
                     old_end, incnumpage , newrg) < 0)
     return -1; /* Map the memory to MEMRAM */
+  sem_post(&caller->mram->memphylock);
   return 0;
 
 }

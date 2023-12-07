@@ -109,6 +109,7 @@ int vmap_page_range(struct pcb_t *caller, // process call
   
     fpn = fpit->fpn-1;
     printf("Free frame is: %d\n", fpn);
+    pte_set_swap(pte, 1, 0);
     pte_set_fpn(pte, fpn);
 
     caller->mm->pgd[pgn + pgit] = *pte;

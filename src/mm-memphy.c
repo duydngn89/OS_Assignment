@@ -8,6 +8,7 @@
 #include "mm.h"
 #include <stdlib.h>
 #include <stdio.h>
+
 /*
  *  MEMPHY_mv_csr - move MEMPHY cursor
  *  @mp: memphy struct
@@ -23,7 +24,6 @@ int MEMPHY_mv_csr(struct memphy_struct *mp, int offset)
      mp->cursor = (mp->cursor + 1) % mp->maxsz;
      numstep++;
    }
-
    return 0;
 }
 
@@ -74,16 +74,20 @@ int MEMPHY_read(struct memphy_struct * mp, int addr, BYTE *value)
  */
 int MEMPHY_seq_write(struct memphy_struct * mp, int addr, BYTE value)
 {
-
+  
    if (mp == NULL)
      return -1;
 
-   if (!mp->rdmflg)
-     return -1; /* Not compatible mode for sequential read */
+   if (!mp->rdmflg){
+       
+      return -1;
+   }
+      /* Not compatible mode for sequential read */
 
    MEMPHY_mv_csr(mp, addr);
+   //sem_wait(&mp->memphylock);
    mp->storage[addr] = value;
-
+   //sem_post(&mp->memphylock);
    return 0;
 }
 
@@ -95,14 +99,19 @@ int MEMPHY_seq_write(struct memphy_struct * mp, int addr, BYTE value)
  */
 int MEMPHY_write(struct memphy_struct * mp, int addr, BYTE data)
 {
-   if (mp == NULL)
-     return -1;
+   
+   if (mp == NULL){
+       
+       return -1;
+   }
 
-   if (mp->rdmflg)
+   if (mp->rdmflg){
+
       mp->storage[addr] = data;
+
+   } 
    else /* Sequential access device */
       return MEMPHY_seq_write(mp, addr, data);
-
    return 0;
 }
 
@@ -164,11 +173,13 @@ int MEMPHY_dump(struct memphy_struct * mp)
     if (mp == NULL || mp->storage == NULL) {
       return -1;
       }
-      //printf("Memory content of MEMPHY:\n");
-      for (int i = 0; i < mp->maxsz; i++) {
-      //printf("%d: %d\n", i, );
-      mp->storage[i];
-      }
+      //printf("List frame in used:\n");
+     for (int i = 0; i <= mp->used_fp_list->fpn; i++) {
+        //printf("Frame %d\n", i);
+
+    }
+    printf("\n");
+
     return 0;
 }
 
