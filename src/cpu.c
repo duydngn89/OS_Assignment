@@ -2,7 +2,7 @@
 #include "cpu.h"
 #include "mem.h"
 #include "mm.h"
-
+#include <stdio.h>
 int calc(struct pcb_t * proc) {
 	return ((unsigned long)proc & 0UL);
 }
@@ -60,8 +60,11 @@ int run(struct pcb_t * proc) {
 		break;
 	case ALLOC:
 #ifdef MM_PAGING
-		stat = pgalloc(proc, ins.arg_0, ins.arg_1);
 
+		stat = pgalloc(proc, ins.arg_0, ins.arg_1);
+		printf("VMA:\n");
+		print_list_vma(proc->mm->mmap);
+		
 #else
 		stat = alloc(proc, ins.arg_0, ins.arg_1);
 #endif
@@ -69,6 +72,8 @@ int run(struct pcb_t * proc) {
 	case FREE:
 #ifdef MM_PAGING
 		stat = pgfree_data(proc, ins.arg_0);
+		printf("Free region:\n");
+		print_list_rg(proc->mm->mmap->vm_freerg_list);
 #else
 		stat = free_data(proc, ins.arg_0);
 #endif

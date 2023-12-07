@@ -68,6 +68,7 @@ static void * cpu_routine(void * args) {
 			printf("Time slot %3lu is printing\n", current_time());
 			printf("\tCPU %d: Processed %2d has finished\n",
 				id ,proc->pid);
+				
 			free(proc);
 			usleep(3);
 			proc = get_proc();
@@ -103,10 +104,12 @@ static void * cpu_routine(void * args) {
 		
 		/* Run current process */
 		run(proc);
+		
 		time_left--;
 		next_slot(timer_id);
 	}
 	detach_event(timer_id);
+	
 	pthread_exit(NULL);
 }
 
@@ -133,6 +136,14 @@ static void * ld_routine(void * args) {
 		while (current_time() < ld_processes.start_time[i]) {
 			next_slot(timer_id);
 		}
+#ifdef MM_PAGING
+		proc->mm = malloc(sizeof(struct mm_struct));
+		init_mm(proc->mm, proc);
+		proc->mram = mram;
+		proc->mswp = mswp;
+		proc->active_mswp = active_mswp;
+		sem_init(&proc->mm->memlock, 0, 1);
+#endif
 		printf("Time slot %3lu is printing\n", current_time());
 		printf("\tLoaded a process at %s, PID: %d PRIO: %ld\n",
 			ld_processes.path[i], proc->pid, ld_processes.prio[i]);
@@ -140,7 +151,9 @@ static void * ld_routine(void * args) {
 		free(ld_processes.path[i]);
 		i++;
 		next_slot(timer_id);
+		
 	}
+	
 	free(ld_processes.path);
 	free(ld_processes.start_time);
 	done = 1;
@@ -155,6 +168,8 @@ static void read_config(const char * path) {
 		exit(1);
 	}
 	fscanf(file, "%d %d %d\n", &time_slot, &num_cpus, &num_processes);
+	printf("Time slice: %d, Number of CPUs: %d, Number of processes: %d\n",
+		time_slot, num_cpus, num_processes);
 	ld_processes.path = (char**)malloc(sizeof(char*) * num_processes);
 	ld_processes.start_time = (unsigned long*)
 		malloc(sizeof(unsigned long) * num_processes);
@@ -204,7 +219,9 @@ static void read_config(const char * path) {
 #endif
 		strcat(ld_processes.path[i], proc);
 		printf("Start Time: %lu, Process: %s, Priority: %lu\n", ld_processes.start_time[i], proc, ld_processes.prio[i]);
+		
 	}
+	
 }
 
 int main(int argc, char * argv[]) {

@@ -1,12 +1,13 @@
 //#ifdef MM_PAGING
 /*
  * PAGING based Memory Management
- * Memory physical module mm/mm-memphy.c
+ * Memory physical module 
+ * /mm-memphy.c
  */
 
 #include "mm.h"
 #include <stdlib.h>
-
+#include <stdio.h>
 /*
  *  MEMPHY_mv_csr - move MEMPHY cursor
  *  @mp: memphy struct
@@ -165,7 +166,8 @@ int MEMPHY_dump(struct memphy_struct * mp)
       }
       //printf("Memory content of MEMPHY:\n");
       for (int i = 0; i < mp->maxsz; i++) {
-      //printf("%d: %d\n”)", i, mp->storage[i]);
+      //printf("%d: %d\n", i, );
+      mp->storage[i];
       }
     return 0;
 }
