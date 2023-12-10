@@ -62,6 +62,7 @@ int run(struct pcb_t * proc) {
 #ifdef MM_PAGING
 
 		stat = pgalloc(proc, ins.arg_0, ins.arg_1);
+		printf("Process ID: %d\n", proc->pid);
 		printf("VMA:\n");
 		print_list_vma(proc->mm->mmap);
 		
@@ -72,6 +73,7 @@ int run(struct pcb_t * proc) {
 	case FREE:
 #ifdef MM_PAGING
 		stat = pgfree_data(proc, ins.arg_0);
+		printf("Process ID: %d\n", proc->pid);
 		printf("Free region:\n");
 		print_list_rg(proc->mm->mmap->vm_freerg_list);
 #else
@@ -81,6 +83,7 @@ int run(struct pcb_t * proc) {
 	case READ:
 #ifdef MM_PAGING
 		stat = pgread(proc, ins.arg_0, ins.arg_1, ins.arg_2);
+		printf("Process ID: %d\n", proc->pid);
 #else
 		stat = read(proc, ins.arg_0, ins.arg_1, ins.arg_2);
 #endif
@@ -88,6 +91,7 @@ int run(struct pcb_t * proc) {
 	case WRITE:
 #ifdef MM_PAGING
 		stat = pgwrite(proc, ins.arg_0, ins.arg_1, ins.arg_2);
+		printf("Process ID: %d\n", proc->pid);
 #else
 		stat = write(proc, ins.arg_0, ins.arg_1, ins.arg_2);
 #endif

@@ -114,6 +114,8 @@ int __alloc(struct pcb_t *caller, int vmaid, int rgid, int size, int *alloc_addr
    */
   cur_vma->sbrk += inc_sz;
   if(inc_vma_limit(caller, vmaid, inc_sz)){
+    printf("Increase limit failed\n");
+    sem_post(&caller->mm->memlock);
     return -1;
   }
   printf("Increase limit done\n");
@@ -250,7 +252,6 @@ int pg_getpage(struct mm_struct *mm, int pgn, int *fpn, struct pcb_t *caller)
     enlist_pgn_node(&caller->mm->fifo_pgn,pgn);
     sem_post(&caller->mram->memphylock);
   }
-
   *fpn = PAGING_FPN(pte);
   printf("Swap done\n");
   return 0;
@@ -273,8 +274,8 @@ int pg_getval(struct mm_struct *mm, int addr, BYTE *data, struct pcb_t *caller)
   /* Get the page to MEMRAM, swap from MEMSWAP if needed */
   if(pg_getpage(mm, pgn, &fpn, caller) != 0) 
     return -1; /* invalid page access */
-
-  int phyaddr = (fpn << PAGING_ADDR_FPN_LOBIT) + off;
+  
+  int phyaddr = (fpn << PAGING_ADDR_FPN_HIBIT-1) + off;
 
   MEMPHY_read(caller->mram,phyaddr, data);
 
@@ -296,8 +297,8 @@ int pg_setval(struct mm_struct *mm, int addr, BYTE value, struct pcb_t *caller)
   /* Get the page to MEMRAM, swap from MEMSWAP if needed */
   if(pg_getpage(mm, pgn, &fpn, caller) != 0) 
     return -1; /* invalid page access */
-  
-  int phyaddr = (fpn << PAGING_ADDR_FPN_LOBIT) + off;
+  int phyaddr = (fpn << PAGING_ADDR_FPN_HIBIT-1) + off;
+  //printf("phyaddr %d\n", phyaddr);
   sem_wait(&caller->mram->memphylock);
   MEMPHY_write(caller->mram,phyaddr, value);
   //printf("Value %d\n", caller);
@@ -491,11 +492,15 @@ int inc_vma_limit(struct pcb_t *caller, int vmaid, int inc_sz)
 
   /* The obtained vm area (only) 
    * now will be alloc real ram region */
-  cur_vma->vm_end += inc_sz;
+  
   sem_wait(&caller->mram->memphylock);
   if (vm_map_ram(caller, area->rg_start, area->rg_end, 
-                    old_end, incnumpage , newrg) < 0)
-    return -1; /* Map the memory to MEMRAM */
+                    old_end, incnumpage , newrg) < 0){
+                      sem_post(&caller->mram->memphylock);
+                       return -1;
+                    }
+  cur_vma->vm_end += inc_sz;
+    /* Map the memory to MEMRAM */
   sem_post(&caller->mram->memphylock);
   return 0;
 
