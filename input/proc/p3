@@ -1,0 +1,12 @@
+20 11
+alloc 8000 1
+calc
+calc
+write 17 1 1000
+calc
+calc
+alloc 3405 0
+calc
+calc
+write 29 0 10
+free 0

@@ -1,0 +1,37 @@
+Step 1: Change running mode in include/os-cfg.h
+
+    Fixed Mem mode-----------------------------------
+    // #define MM_PAGING
+    #define MM_FIXED_MEMSZ
+    // #define VMDBG 1
+    // #define MMDBG 1
+    #define IODUMP 1
+    #define PAGETBL_DUMP 1
+
+    Paging mode-----------------------------------
+    #define MM_PAGING
+    // #define MM_FIXED_MEMSZ
+    #define VMDBG 1
+    #define MMDBG 1
+    #define IODUMP 1
+    #define PAGETBL_DUMP 1
+
+
+
+Step 2a: Run test (without paging - fixed mem mode)
+    ./os sched > test_sched.txt
+    ./os sched_0 > test_sched_0.txt
+    ./os sched_1 > test_sched_1.txt
+    ./os os_1_singleCPU_mlq > os_1_singleCPU_mlq.txt
+
+Step 2b: Run tests (with paging)
+
+    ./os os_0_mlq_paging > test_os_0_mlq_paging.txt
+    ./os os_1_mlq_paging > test_os_1_mlq_paging.txt
+    ./os os_1_mlq_paging_small_1K > os_1_mlq_paging_small_1K.txt
+    ./os os_1_mlq_paging_small_4K > os_1_mlq_paging_small_4K.txt
+    ./os os_1_singleCPU_mlq > os_1_singleCPU_mlq.txt
+    ./os os_1_singleCPU_mlq_paging > os_1_singleCPU_mlq_paging.txt
+    ./os os_1_singleCPU_mlq > os_1_singleCPU_mlq.txt
+    ./os os_1_singleCPU_mlq > os_1_singleCPU_mlq.txt
+
