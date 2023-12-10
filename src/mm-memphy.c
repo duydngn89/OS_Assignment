@@ -99,14 +99,13 @@ int MEMPHY_seq_write(struct memphy_struct * mp, int addr, BYTE value)
  */
 int MEMPHY_write(struct memphy_struct * mp, int addr, BYTE data)
 {
-   
    if (mp == NULL){
        
        return -1;
    }
 
    if (mp->rdmflg){
-
+      
       mp->storage[addr] = data;
 
    } 
@@ -170,15 +169,16 @@ int MEMPHY_dump(struct memphy_struct * mp)
     /*TODO dump memphy contnt mp->storage 
      *     for tracing the memory content
      */
-    if (mp == NULL || mp->storage == NULL) {
-      return -1;
+     printf("================MEMORY TEST=================\n");
+    for (int addr = 0; addr < mp->maxsz; addr++)
+    {
+      if (mp->storage[addr] != 0)
+      {
+         
+         printf("Content at address %d : %d\n", addr, mp->storage[addr]);
       }
-      //printf("List frame in used:\n");
-     for (int i = 0; i <= mp->used_fp_list->fpn; i++) {
-        //printf("Frame %d\n", i);
-
     }
-    printf("\n");
+    printf("============================================\n");
 
     return 0;
 }
