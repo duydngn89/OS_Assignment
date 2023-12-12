@@ -275,7 +275,7 @@ int pg_getval(struct mm_struct *mm, int addr, BYTE *data, struct pcb_t *caller)
   if(pg_getpage(mm, pgn, &fpn, caller) != 0) 
     return -1; /* invalid page access */
   
-  int phyaddr = (fpn << PAGING_ADDR_FPN_HIBIT-1) + off;
+  int phyaddr = (fpn << (PAGING_ADDR_FPN_HIBIT-1)) + off;
 
   MEMPHY_read(caller->mram,phyaddr, data);
 
@@ -297,7 +297,7 @@ int pg_setval(struct mm_struct *mm, int addr, BYTE value, struct pcb_t *caller)
   /* Get the page to MEMRAM, swap from MEMSWAP if needed */
   if(pg_getpage(mm, pgn, &fpn, caller) != 0) 
     return -1; /* invalid page access */
-  int phyaddr = (fpn << PAGING_ADDR_FPN_HIBIT-1) + off;
+  int phyaddr = (fpn << (PAGING_ADDR_FPN_HIBIT-1)) + off;
   //printf("phyaddr %d\n", phyaddr);
   sem_wait(&caller->mram->memphylock);
   MEMPHY_write(caller->mram,phyaddr, value);
@@ -485,7 +485,7 @@ int inc_vma_limit(struct pcb_t *caller, int vmaid, int inc_sz)
 
   /*Validate overlap of obtained region */
   if (validate_overlap_vm_area(caller, vmaid, area->rg_start, area->rg_end) < 0){
-    
+    sem_post(&caller->mram->memphylock);
     return -1; /*Overlap and failed allocation */
   }
     
